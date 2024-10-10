@@ -1,0 +1,4 @@
+--patch-module
+cqu.drsystem=_
+--add-reads
+cqu.drsystem=ALL-UNNAMED

@@ -1,7 +1,7 @@
 package cqu.drsystem;
 
 /**
- * Represents a disaster event in the Disaster Response System.
+ * Represents a disaster event in the Disaster Response System, test for pushing.
  * This class encapsulates the key information about a disaster.
  */
 public class Disaster {
