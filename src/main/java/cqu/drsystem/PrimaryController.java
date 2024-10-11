@@ -227,7 +227,7 @@ public class PrimaryController {
     
     public void reportDisasterForTesting(String type, String location, String severity, String description) {
         if (type.isEmpty() || location.isEmpty() || severity == null) {
-            // 模拟显示错误提示
+         
             System.out.println("Error: Please fill in all fields");
             return;
         }
@@ -237,7 +237,7 @@ public class PrimaryController {
         
         prioritizeResponse(disaster);
         notifyDepartments(disaster);
-        // 不调用updateDisasterLog()和clearInputFields()，因为它们依赖于JavaFX组件
+     
     }
 
 }
