@@ -12,8 +12,8 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        scene = new Scene(loadFXML("primary"), 800, 600);
-        stage.setTitle("Disaster Response System");
+        scene = new Scene(loadFXML("primary"), 1000, 800);
+        stage.setTitle("Disaster Response System - Enhanced");
         stage.setScene(scene);
         stage.show();
     }
@@ -22,7 +22,7 @@ public class App extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxml + ".fxml"));
         return fxmlLoader.load();
     }
-    
+
     public static void setRoot(String fxml) throws IOException {
         scene.setRoot(loadFXML(fxml));
     }

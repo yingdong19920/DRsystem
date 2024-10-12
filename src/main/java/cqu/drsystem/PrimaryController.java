@@ -8,30 +8,58 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
+/**
+ * The PrimaryController class manages the user interactions and functionality
+ * for the Disaster Response System (DRS) user interface. It handles reporting
+ * disasters, resource allocation, department coordination, and disaster logging.
+ */
 public class PrimaryController {
-    @FXML private TextField disasterTypeField;
+    @FXML private ComboBox<String> disasterTypeComboBox;  // Disaster type as ComboBox
     @FXML private TextField locationField;
     @FXML private ComboBox<String> severityComboBox;
     @FXML private TextArea descriptionArea;
     @FXML private TextArea disasterLogArea;
     @FXML private ListView<String> departmentListView;
+    @FXML private ListView<String> resourceListView;
+
+    // Resource selection components
+    @FXML private CheckBox fireTruckCheckBox;
+    @FXML private Spinner<Integer> fireTruckSpinner;
+    @FXML private CheckBox ambulanceCheckBox;
+    @FXML private Spinner<Integer> ambulanceSpinner;
+    @FXML private CheckBox rescueTeamCheckBox;
+    @FXML private Spinner<Integer> rescueTeamSpinner;
 
     private final List<Disaster> disasterLog = new ArrayList<>();
     private final Map<String, List<String>> departmentCoordination = new HashMap<>();
+    private final ResourceManagement resourceManagement = new ResourceManagement();
+    private final List<Resource> selectedResources = new ArrayList<>();
 
     /**
-     * Initializes the controller.
-     * Sets up the severity combo box and initializes departments.
+     * Initializes the disaster types, severity options, departments, and resource spinners.
+     * This method is automatically called when the FXML is loaded.
      */
     @FXML
     public void initialize() {
+        // Populate disaster types
+        disasterTypeComboBox.getItems().addAll("Earthquake", "Flood", "Hurricane", "Fire", "Tornado");
+
         severityComboBox.getItems().addAll("Low", "Medium", "High");
         initializeDepartments();
+        initializeResources();
+
+        // Set value factory for spinners
+        fireTruckSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 10, 0));
+        ambulanceSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 10, 0));
+        rescueTeamSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 10, 0));
+
+        // Initially, the resource list view is empty
+        resourceListView.getItems().clear();
     }
 
     /**
-     * Initializes the departments and their coordination lists.
-     * Updates the department list view.
+     * Initializes the department coordination map with available departments.
+     * Updates the department list view to reflect the initialized departments.
      */
     private void initializeDepartments() {
         departmentCoordination.put("Fire Department", new ArrayList<>());
@@ -43,98 +71,172 @@ public class PrimaryController {
         updateDepartmentListView();
     }
 
-      /**
-     * Handles the disaster reporting process.
-     * Validates input, creates a new Disaster object, adds it to the log,
-     * prioritizes the response, notifies relevant departments, and updates the UI.
+    /**
+     * Initializes the available resources in the ResourceManagement class.
+     */
+    private void initializeResources() {
+        resourceManagement.addResource(new Resource("1", "Fire Truck", "Vehicle", "available", 10));
+        resourceManagement.addResource(new Resource("2", "Ambulance", "Vehicle", "available", 8));
+        resourceManagement.addResource(new Resource("3", "Rescue Team", "Personnel", "available", 15));
+    }
+
+    /**
+     * Reports a disaster by collecting user input for disaster details and allocating resources.
+     * Notifies the relevant departments and updates the disaster log.
      *
-     * @param event The action event triggering this method
+     * @param event the ActionEvent triggered by the report button
      */
     @FXML
     public void reportDisaster(ActionEvent event) {
-        String type = disasterTypeField.getText();
+        String type = disasterTypeComboBox.getValue();  // Get selected disaster type
         String location = locationField.getText();
         String severity = severityComboBox.getValue();
         String description = descriptionArea.getText();
 
-        if (type.isEmpty() || location.isEmpty() || severity == null) {
+        // Ensure all required fields are filled
+        if (type == null || location.isEmpty() || severity == null || description.isEmpty()) {
             showAlert(Alert.AlertType.ERROR, "Error", "Please fill in all fields");
             return;
         }
 
+        // Create and add disaster to log
         Disaster disaster = new Disaster(type, location, severity, description);
         disasterLog.add(disaster);
-        
-        prioritizeResponse(disaster);
+
+        // Allocate resources based on user selection
+        allocateResources(disaster);
+
+        // Notify departments based on the disaster type
         notifyDepartments(disaster);
+
+        // Update disaster log and clear input fields
         updateDisasterLog();
-        clearInputFields();
     }
 
     /**
-     * Determines the response priority based on the disaster severity.
-     * Displays an alert with the priority classification.
+     * Notifies relevant departments based on the type of disaster and updates the department list view.
      *
-     * @param disaster The reported disaster
-     */
-    private void prioritizeResponse(Disaster disaster) {
-        String priority;
-        switch (disaster.getSeverity().toLowerCase()) {
-            case "high":
-                priority = "Immediate Response Required";
-                break;
-            case "medium":
-                priority = "Moderate Response Required";
-                break;
-            case "low":
-                priority = "Low Response Priority";
-                break;
-            default:
-                priority = "Unknown Severity";
-        }
-        showAlert(Alert.AlertType.INFORMATION, "Disaster Response Priority", 
-                  "The disaster reported has been classified as: " + priority);
-    }
-
-     /**
-     * Notifies relevant departments based on the disaster type.
-     * Updates the department coordination map and the UI.
-     * Displays an alert with the notified departments.
-     *
-     * @param disaster The reported disaster
+     * @param disaster the reported disaster
      */
     private void notifyDepartments(Disaster disaster) {
         List<String> notifiedDepartments = new ArrayList<>();
         switch (disaster.getType().toLowerCase()) {
-            case "fire":
-                notifiedDepartments.add("Fire Department");
-                notifiedDepartments.add("Emergency Response");
-                break;
             case "earthquake":
                 notifiedDepartments.add("Emergency Response");
                 notifiedDepartments.add("Hospital");
                 notifiedDepartments.add("Fire Department");
                 break;
+            case "flood":
+                notifiedDepartments.add("Emergency Response");
+                notifiedDepartments.add("Utility Services");
+                notifiedDepartments.add("Law Enforcement");
+                break;
             case "hurricane":
+                notifiedDepartments.add("Emergency Response");
                 notifiedDepartments.add("Transportation");
                 notifiedDepartments.add("Utility Services");
+                break;
+            case "fire":
+                notifiedDepartments.add("Fire Department");
                 notifiedDepartments.add("Emergency Response");
+                break;
+            case "tornado":
+                notifiedDepartments.add("Emergency Response");
+                notifiedDepartments.add("Law Enforcement");
+                notifiedDepartments.add("Transportation");
                 break;
             default:
                 notifiedDepartments.add("Emergency Response");
+                break;
         }
 
-        for (String dept : notifiedDepartments) {
-            departmentCoordination.get(dept).add(disaster.toString());
+        // Update department coordination list with the notified departments
+        for (String department : notifiedDepartments) {
+            departmentCoordination.get(department).add(disaster.toString());
         }
 
+        // Update the department coordination UI
         updateDepartmentListView();
+
+        // Show a confirmation alert with the notified departments
         showAlert(Alert.AlertType.INFORMATION, "Department Notification", 
-                  String.join(", ", notifiedDepartments) + " have been notified for this disaster.");
+                  "The following departments have been notified: " + String.join(", ", notifiedDepartments));
     }
 
-      /**
-     * Updates the department list view with the current coordination status.
+    /**
+     * Allocates resources based on user selection and updates the resource list view.
+     *
+     * @param disaster the reported disaster
+     */
+    private void allocateResources(Disaster disaster) {
+        selectedResources.clear();  // Clear previously selected resources
+
+        // Check if Fire Truck is selected and the quantity is greater than 0
+        if (fireTruckCheckBox.isSelected()) {
+            int quantity = fireTruckSpinner.getValue();
+            if (quantity > 0) {
+                Resource fireTruck = resourceManagement.getResourceByName("Fire Truck");
+                if (fireTruck != null && fireTruck.getAvailableQuantity() >= quantity) {
+                    fireTruck.setAvailableQuantity(fireTruck.getAvailableQuantity() - quantity);
+                    fireTruck.setAllocatedQuantity(quantity);  // Record allocated quantity
+                    selectedResources.add(fireTruck);
+                } else {
+                    showAlert(Alert.AlertType.WARNING, "Resource Allocation", "Not enough Fire Trucks available.");
+                }
+            }
+        }
+
+        // Check if Ambulance is selected and the quantity is greater than 0
+        if (ambulanceCheckBox.isSelected()) {
+            int quantity = ambulanceSpinner.getValue();
+            if (quantity > 0) {
+                Resource ambulance = resourceManagement.getResourceByName("Ambulance");
+                if (ambulance != null && ambulance.getAvailableQuantity() >= quantity) {
+                    ambulance.setAvailableQuantity(ambulance.getAvailableQuantity() - quantity);
+                    ambulance.setAllocatedQuantity(quantity);  // Record allocated quantity
+                    selectedResources.add(ambulance);
+                } else {
+                    showAlert(Alert.AlertType.WARNING, "Resource Allocation", "Not enough Ambulances available.");
+                }
+            }
+        }
+
+        // Check if Rescue Team is selected and the quantity is greater than 0
+        if (rescueTeamCheckBox.isSelected()) {
+            int quantity = rescueTeamSpinner.getValue();
+            if (quantity > 0) {
+                Resource rescueTeam = resourceManagement.getResourceByName("Rescue Team");
+                if (rescueTeam != null && rescueTeam.getAvailableQuantity() >= quantity) {
+                    rescueTeam.setAvailableQuantity(rescueTeam.getAvailableQuantity() - quantity);
+                    rescueTeam.setAllocatedQuantity(quantity);  // Record allocated quantity
+                    selectedResources.add(rescueTeam);
+                } else {
+                    showAlert(Alert.AlertType.WARNING, "Resource Allocation", "Not enough Rescue Teams available.");
+                }
+            }
+        }
+
+        // Allocate the selected resources to the disaster and update the resource table
+        for (Resource resource : selectedResources) {
+            resourceManagement.allocateResource(disaster, resource); // Allocate resources to the disaster
+        }
+
+        // Update the resource management table (resource list view) only after selection and reporting
+        updateResourceListView();
+    }
+
+    /**
+     * Updates the resource list view with the currently selected resources.
+     */
+    private void updateResourceListView() {
+        resourceListView.getItems().clear();
+        for (Resource resource : selectedResources) {
+            resourceListView.getItems().add(resource.toString());
+        }
+    }
+
+    /**
+     * Updates the department list view to reflect the current department coordination status.
      */
     private void updateDepartmentListView() {
         departmentListView.getItems().clear();
@@ -144,15 +246,40 @@ public class PrimaryController {
     }
 
     /**
-     * Displays the current disaster log in the UI.
+     * Resets the system by clearing all data and restoring default values in the UI components.
+     *
+     * @param event the ActionEvent triggered by the clean log button
      */
     @FXML
-    public void showDisasterLog() {
-        updateDisasterLog();
+    public void cleanLog(ActionEvent event) {
+        // Clear all data
+        disasterLog.clear();
+        departmentCoordination.clear();
+        selectedResources.clear();
+        resourceListView.getItems().clear();
+        disasterLogArea.clear();
+
+        // Reset UI components to default state
+        disasterTypeComboBox.getSelectionModel().clearSelection();  // Clear disaster type selection
+        locationField.clear();
+        severityComboBox.getSelectionModel().clearSelection();
+        descriptionArea.clear();
+        fireTruckCheckBox.setSelected(false);
+        ambulanceCheckBox.setSelected(false);
+        rescueTeamCheckBox.setSelected(false);
+        fireTruckSpinner.getValueFactory().setValue(0);
+        ambulanceSpinner.getValueFactory().setValue(0);
+        rescueTeamSpinner.getValueFactory().setValue(0);
+        
+        // Reinitialize departments and resources
+        initializeDepartments();
+        initializeResources();
+
+        showAlert(Alert.AlertType.INFORMATION, "System Reset", "The system has been reset to the default state.");
     }
 
-     /**
-     * Updates the disaster log text area with the current list of disasters.
+    /**
+     * Updates the disaster log view with the list of reported disasters.
      */
     private void updateDisasterLog() {
         StringBuilder log = new StringBuilder();
@@ -162,22 +289,12 @@ public class PrimaryController {
         disasterLogArea.setText(log.toString());
     }
 
-     /**
-     * Clears all input fields after a disaster report is submitted.
-     */
-    private void clearInputFields() {
-        disasterTypeField.clear();
-        locationField.clear();
-        severityComboBox.getSelectionModel().clearSelection();
-        descriptionArea.clear();
-    }
-
     /**
-     * Displays an alert dialog with the specified type, title, and content.
+     * Shows an alert dialog with the specified title and content.
      *
-     * @param alertType The type of alert to display
-     * @param title The title of the alert dialog
-     * @param content The content message of the alert dialog
+     * @param alertType the type of alert (ERROR, WARNING, INFORMATION)
+     * @param title     the title of the alert dialog
+     * @param content   the content message of the alert dialog
      */
     private void showAlert(Alert.AlertType alertType, String title, String content) {
         Alert alert = new Alert(alertType);
@@ -186,58 +303,4 @@ public class PrimaryController {
         alert.setContentText(content);
         alert.showAndWait();
     }
-
-    // Getter methods for testing
-    public TextField getDisasterTypeField() { return disasterTypeField; }
-    public void setDisasterTypeField(TextField disasterTypeField) { this.disasterTypeField = disasterTypeField; }
-
-    public TextField getLocationField() { return locationField; }
-    public void setLocationField(TextField locationField) { this.locationField = locationField; }
-
-    public ComboBox<String> getSeverityComboBox() { return severityComboBox; }
-    public void setSeverityComboBox(ComboBox<String> severityComboBox) { this.severityComboBox = severityComboBox; }
-
-    public TextArea getDescriptionArea() { return descriptionArea; }
-    public void setDescriptionArea(TextArea descriptionArea) { this.descriptionArea = descriptionArea; }
-
-    public TextArea getDisasterLogArea() { return disasterLogArea; }
-    public void setDisasterLogArea(TextArea disasterLogArea) { this.disasterLogArea = disasterLogArea; }
-
-    public ListView<String> getDepartmentListView() { return departmentListView; }
-    public void setDepartmentListView(ListView<String> departmentListView) { this.departmentListView = departmentListView; }
-    
-    public void setDisasterDetails(String type, String location, String severity, String description) {
-        if (disasterTypeField != null) disasterTypeField.setText(type);
-        if (locationField != null) locationField.setText(location);
-        if (severityComboBox != null) severityComboBox.setValue(severity);
-        if (descriptionArea != null) descriptionArea.setText(description);
-    }
-
-    public String getDisasterLogContent() {
-        return disasterLogArea != null ? disasterLogArea.getText() : "";
-    }
-
-    public List<String> getDepartmentCoordinationStatus() {
-        return departmentListView != null ? departmentListView.getItems() : new ArrayList<>();
-    }
-
-    public List<Disaster> getDisasterLog() {
-        return new ArrayList<>(disasterLog);
-    }
-    
-    public void reportDisasterForTesting(String type, String location, String severity, String description) {
-        if (type.isEmpty() || location.isEmpty() || severity == null) {
-         
-            System.out.println("Error: Please fill in all fields");
-            return;
-        }
-
-        Disaster disaster = new Disaster(type, location, severity, description);
-        disasterLog.add(disaster);
-        
-        prioritizeResponse(disaster);
-        notifyDepartments(disaster);
-     
-    }
-
 }
