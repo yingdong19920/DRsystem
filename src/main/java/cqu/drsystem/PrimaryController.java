@@ -43,7 +43,11 @@ public class PrimaryController {
     public void initialize() {
         // Populate disaster types
         disasterTypeComboBox.getItems().addAll("Earthquake", "Flood", "Hurricane", "Fire", "Tornado");
-
+        
+        // Set default value to "Select"
+        disasterTypeComboBox.setValue("Select");
+        severityComboBox.setValue("Select");
+        
         severityComboBox.getItems().addAll("Low", "Medium", "High");
         initializeDepartments();
         initializeResources();
@@ -88,16 +92,15 @@ public class PrimaryController {
      */
     @FXML
     public void reportDisaster(ActionEvent event) {
+        // Validate user input
+        if (!validateInput()) {
+            return;  // If validation fails, stop the process
+        }
+
         String type = disasterTypeComboBox.getValue();  // Get selected disaster type
         String location = locationField.getText();
         String severity = severityComboBox.getValue();
         String description = descriptionArea.getText();
-
-        // Ensure all required fields are filled
-        if (type == null || location.isEmpty() || severity == null || description.isEmpty()) {
-            showAlert(Alert.AlertType.ERROR, "Error", "Please fill in all fields");
-            return;
-        }
 
         // Create and add disaster to log
         Disaster disaster = new Disaster(type, location, severity, description);
@@ -113,6 +116,86 @@ public class PrimaryController {
         updateDisasterLog();
     }
 
+    /**
+     * Validates user input for disaster reporting.
+     * Ensures that all fields are filled before proceeding with the report.
+     *
+     * @return true if validation passes, false otherwise
+     */
+    private boolean validateInput() {
+    StringBuilder errorMessage = new StringBuilder();
+
+     // Check disaster type selection (ensure it's not the default value "Select")
+    if (disasterTypeComboBox.getValue() == null || disasterTypeComboBox.getValue().equals("Select")) {
+        errorMessage.append("Please select a valid disaster type.\n");
+    }
+
+    // Check location field: ensure it is not empty and has at least 3 characters
+    if (locationField.getText().isEmpty() || locationField.getText().trim().length() < 3) {
+        errorMessage.append("Please enter a valid location (at least 3 characters).\n");
+    }
+
+    // Check for alphabetic characters in location
+    if (!locationField.getText().matches("[a-zA-Z\\s]+")) {
+        errorMessage.append("Location must contain only letters and spaces.\n");
+    }
+
+    // Check severity selection
+    if (severityComboBox.getValue() == null || severityComboBox.getValue().equals("Select")) {
+        errorMessage.append("Please select the severity of the disaster.\n");
+    }
+
+    // Check description field: minimum of 10 characters required
+    if (descriptionArea.getText().isEmpty() || descriptionArea.getText().trim().length() < 10) {
+        errorMessage.append("Please provide a more detailed description (at least 10 characters).\n");
+    }
+
+    // Check resource selection and quantities
+    boolean resourceSelected = false;
+
+    // Check if Fire Truck is selected and validate the quantity
+    if (fireTruckCheckBox.isSelected()) {
+        resourceSelected = true;
+        if (fireTruckSpinner.getValue() == 0) {
+            errorMessage.append("Please select a valid quantity for Fire Trucks (greater than 0).\n");
+        } else if (fireTruckSpinner.getValue() > 10) {
+            errorMessage.append("The quantity of Fire Trucks cannot exceed 10.\n");
+        }
+    }
+
+    // Check if Ambulance is selected and validate the quantity
+    if (ambulanceCheckBox.isSelected()) {
+        resourceSelected = true;
+        if (ambulanceSpinner.getValue() == 0) {
+            errorMessage.append("Please select a valid quantity for Ambulances (greater than 0).\n");
+        } else if (ambulanceSpinner.getValue() > 8) {
+            errorMessage.append("The quantity of Ambulances cannot exceed 8.\n");
+        }
+    }
+
+    // Check if Rescue Team is selected and validate the quantity
+    if (rescueTeamCheckBox.isSelected()) {
+        resourceSelected = true;
+        if (rescueTeamSpinner.getValue() == 0) {
+            errorMessage.append("Please select a valid quantity for Rescue Teams (greater than 0).\n");
+        } else if (rescueTeamSpinner.getValue() > 15) {
+            errorMessage.append("The quantity of Rescue Teams cannot exceed 15.\n");
+        }
+    }
+
+    // Ensure at least one resource has been selected
+    if (!resourceSelected) {
+        errorMessage.append("Please select at least one resource to allocate.\n");
+    }
+
+    // Show error message if any validation fails
+    if (errorMessage.length() > 0) {
+        showAlert(Alert.AlertType.ERROR, "Input Validation Error", errorMessage.toString());
+        return false;
+    }
+
+    return true;
+}
     /**
      * Notifies relevant departments based on the type of disaster and updates the department list view.
      *
