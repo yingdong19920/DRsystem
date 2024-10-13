@@ -2,5 +2,7 @@ cqu/drsystem/PrimaryController.class
 cqu/drsystem/ResourceManagement.class
 module-info.class
 cqu/drsystem/Disaster.class
+cqu/drsystem/RegisterController.class
+cqu/drsystem/LoginController.class
 cqu/drsystem/App.class
 cqu/drsystem/Resource.class

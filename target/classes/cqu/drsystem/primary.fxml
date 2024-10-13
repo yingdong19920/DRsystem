@@ -11,7 +11,7 @@
       <Insets top="20" right="20" bottom="20" left="20"/>
    </padding>
 
-   <Label text="Disaster Response System" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+   <Label text="Disaster Response System Enhanced" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
    
    <GridPane hgap="10" vgap="10" alignment="CENTER">
       <Label text="Disaster Type:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
@@ -55,4 +55,7 @@
 
    <!-- Clean Log button -->
    <Button text="Clean Log" onAction="#cleanLog"/>
+   
+    <!-- Logout button -->
+   <Button text="Logout" onAction="#logout" alignment="CENTER"/>
 </VBox>

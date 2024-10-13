@@ -386,4 +386,9 @@ public class PrimaryController {
         alert.setContentText(content);
         alert.showAndWait();
     }
+    
+    @FXML
+    private void logout(ActionEvent event) throws Exception {
+        App.logout();  // Log out the user and redirect to login page
+    }
 }

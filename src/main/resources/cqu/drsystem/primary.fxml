@@ -55,4 +55,7 @@
 
    <!-- Clean Log button -->
    <Button text="Clean Log" onAction="#cleanLog"/>
+   
+    <!-- Logout button -->
+   <Button text="Logout" onAction="#logout" alignment="CENTER"/>
 </VBox>
